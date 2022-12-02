@@ -1,52 +1,45 @@
-/*
-Create (új sor, új objektum)
-Read (táblázat lista)
-Update (sor (objektum) módoisítás)
-Delete (sor tötlés)
+let products = [];
+let url = "http://localhost:3000/products";
+let mode = "read";
+let currentID = null;
+let order = false;
 
-CRUD műveletek
-*/
+// state = {
+//     products: [
+//         {
+//             id: idGen(),
+//             name: "Áru 1",
+//             price: 1500,
+//             quantity: 97,
+//             isInStock: true
+//         },
+//         {
+//             id: idGen(),
+//             name: "Áru 2",
+//             price: 2500,
+//             quantity: 15,
+//             isInStock: true
+//         },
+//         {
+//             id: idGen(),
+//             name: "Áru 3",
+//             price: 3500,
+//             quantity: 25,
+//             isInStock: false
+//         },
+//         {
+//             id: idGen(),
+//             name: "Áru 4",
+//             price: 4500,
+//             quantity: 10,
+//             isInStock: true
+//         }
+//     ],
+// }
 
-//state
 
-state = {
-    //Adatstruktúra
-    products: [
-        {
-            id: idGen(),
-            name: "Áru 1",
-            price: 1500,
-            quantity: 97,
-            isInStock: true
-        },
-        {
-            id: idGen(),
-            name: "Áru 2",
-            price: 2500,
-            quantity: 15,
-            isInStock: true
-        },
-        {
-            id: idGen(),
-            name: "Áru 3",
-            price: 3500,
-            quantity: 25,
-            isInStock: false
-        },
-        {
-            id: idGen(),
-            name: "Áru 4",
-            price: 4500,
-            quantity: 10,
-            isInStock: true
-        }
-    ],
+    
 
-    cart: [],
-
-    event: "read", //milyen állapotban van: read, delete, update, create
-    currentId: null //Update esetén itt tároljuk a módosítandó product id-jét
-}
 
 //#region Segéd függvények
 //Űrlap megjelenítése
@@ -97,7 +90,9 @@ document.getElementById("save-product").onclick = function(event){
     //Hozzájutás az adatokhoz
     let name = document.getElementById("name").value;
     let price = +document.getElementById("price").value;
-    let isInStock = document.getElementById("isInStock").checked;
+    let quantity = +document.getElementById("quantity").value;
+    let type = +document.getElementById("type").value;
+    
 
     //validálás
     let errorList = [];
@@ -132,7 +127,8 @@ document.getElementById("save-product").onclick = function(event){
         id: id,
         name: name,
         price: price,
-        isInStock: isInStock
+        quantity: quantity,
+        type: type
     }
 
     if (state.event == "create" ) {
@@ -149,6 +145,8 @@ document.getElementById("save-product").onclick = function(event){
     //mezők ürítése
     document.getElementById("name").value = null;
     document.getElementById("price").value = null;
+    document.getElementById("quantity").value = null;
+    document.getElementById("type").value = null;
 }
 
 //Kosár megmutatása
@@ -253,64 +251,85 @@ function cardBoxView(){
 
 //Read: product lista
 function renderProducts(){
-    console.log(state.products);
-    state.event = "read";
-    let prodctsHtml = "";
+
+    mode = "read";
+    fetch(url)
+        .then((response) => {
+            return response.json()
+        })
+        .then((data) => {
+            console.log("Adatok a szervertől", data)
+            products = data
+            console.log("products", products);
+            viewProducts(data);     
+        })
+        .catch((error) => {
+            console.log(error)
+            error = "Szerver hiba"
+            document.getElementById("table").innerHTML = `<h2>${error}</h2>`;
+
+        });
+
+}
+
+function viewProducts(products){
     
-    state.products.forEach(product => {
-        prodctsHtml += `
-        <div class="col">
-            <div class="card ${product.quantity > 0 ? "" : "bg-warning"}">
-                <div class="card-body">
-                    <h5 class="card-title">${product.name}</h5>
-                    <p class="card-text">Termék ár: ${product.price} Ft</p>
-                    <p class="card-text">Raktáron: ${product.quantity} db</p>
-                </div>
-
-                <div class="d-flex flex-row m-2">
-
-                    <!-- Törlés -->
-                    <button type="button" 
-                        class="btn btn-danger btn-sm"
-                        onclick="deleteProduct('${product.id}')"
-                    >
-                        Törlés
-                    </button>
-
-                    <!-- Módosítás -->
-                    <button type="button" 
-                        class="btn btn-success btn-sm ms-2"
-                        onclick="updateProduct('${product.id}')"
-                    >
-                        Módosít
-                    </button>
-                </div>
-
-                <div class="d-flex flex-row m-2">
-                    <!-- Kosárba rakás -->
-                    <button type="button" 
-                        class="btn btn-outline-success col-4"
-                        onclick="intoCart('${product.id}')"
-                    >
-                        <i class="bi bi-cart-plus"></i>
-                    </button>
-                    
-                    <!-- Mennyit rakok a kosárba -->
-                    <input
-                        type="number"
-                        class="form-control ms-2"
-                        id="${product.id}"
-                        value="1"
-                        min="1"
-                        max="${product.quantity}"
-                        onchange="quantityInputCheck('${product.id}')"
-                    />
-                </div>
-            </div>
-        </div>`;
         
-    });
-    document.getElementById("product-list").innerHTML = prodctsHtml;
+    let prodctsHtml = "";
+    products.forEach(product => {
+        prodctsHtml += `
+    <div class="col">
+        <div class="card ${product.quantity > 0 ? "" : "bg-warning"}">
+            <div class="card-body">
+                <h5 class="card-title">${product.name}</h5>
+                <p class="card-text">Termék ár: ${product.price} Ft</p>
+                <p class="card-text">Raktáron: ${product.quantity} db</p>
+            </div>
+
+            <div class="d-flex flex-row m-2">
+
+                <!-- Törlés -->
+                <button type="button" 
+                    class="btn btn-danger btn-sm"
+                    onclick="deleteProduct('${product.id}')"
+                >
+                    Törlés
+                </button>
+
+                <!-- Módosítás -->
+                <button type="button" 
+                    class="btn btn-success btn-sm ms-2"
+                    onclick="updateProduct('${product.id}')"
+                >
+                    Módosít
+                </button>
+            </div>
+
+            <div class="d-flex flex-row m-2">
+                <!-- Kosárba rakás -->
+                <button type="button" 
+                    class="btn btn-outline-success col-4"
+                    onclick="intoCart('${product.id}')"
+                >
+                    <i class="bi bi-cart-plus"></i>
+                </button>
+                
+                <!-- Mennyit rakok a kosárba -->
+                <input
+                    type="number"
+                    class="form-control ms-2"
+                    id="${product.id}"
+                    value="1"
+                    min="1"
+                    max="${product.quantity}"
+                    onchange="quantityInputCheck('${product.id}')"
+                />
+            </div>
+        </div>
+    </div>`;
+    
+});
+document.getElementById("product-list").innerHTML = prodctsHtml;
 }
 
 function quantityInputCheck(id){
@@ -399,11 +418,17 @@ function updateProduct(id){
 
 //Delete: Töröl gomb függvénye
 function deleteProduct(id){
-    state.event = "delete";
-    let index = searchIndex(id)
-    state.products.splice(index,1);
-    renderProducts()
+    let urlDelete = `${url}/${id}`
+    fetch(urlDelete, {
+        method: 'DELETE'
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            console.log(data)
+            renderTable();
+        })
+        .catch((error) => console.log(error))
 }
 
-//Amikor betöltődött az oldal, elindul a: renderProducts függvény
+
 window.onload = renderProducts;
