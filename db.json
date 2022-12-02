@@ -27,6 +27,13 @@
       "price": 4500,
       "quantity": 10,
       "type": "ital"
+    },
+    {
+      "id": 5,
+      "name": "Áru xxx",
+      "quantity": 400,
+      "price": 45000,
+      "type": "asder"
     }
   ]
 }
