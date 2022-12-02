@@ -96,19 +96,6 @@ document.getElementById("save-product").onclick = function(event){
             renderProducts();
         });
     }
-
-
-
-
-
-
-
-
-
-
-  
-    
-
     
     let errorList = [];
     if (! (products.name)){
